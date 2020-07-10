@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -9,7 +10,7 @@ namespace MCMicroLauncher
         /// <summary>
         ///  Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        private IContainer components = new Container();
 
         /// <summary>
         ///  Clean up any resources being used.
@@ -39,51 +40,57 @@ namespace MCMicroLauncher
             this.SuspendLayout();
 
             // Name label
-            var nameLabel = new Label();
-            nameLabel.Text = "Account email";
-            nameLabel.ForeColor = Color.White;
-            nameLabel.Top = 10;
-            nameLabel.Left = 10;
+            var nameLabel = new Label
+            {
+                Text = "Account email",
+                ForeColor = Color.White,
+                Location = new Point(10, 10)
+            }
 
             // Name box
-            this.nameBox = new TextBox();
-            this.nameBox.Left = 10;
-            this.nameBox.Top = 40;
-            this.nameBox.Width = 200;
+            this.nameBox = new TextBox
+            {
+                Location = new Point(10, 40),
+                Width = 200
+            };
 
             // Pass label
-            var passLabel = new Label();
-            passLabel.Text = "Password";
-            passLabel.ForeColor = Color.White;
-            passLabel.Top = 80;
-            passLabel.Left = 10;
+            var passLabel = new Label
+            {
+                Text = "Password",
+                ForeColor = Color.White,
+                Location = new Point(10, 80)
+            };
 
             // Pass box
-            this.passBox = new TextBox();
-            this.passBox.UseSystemPasswordChar = true;
-            this.passBox.Left = 10;
-            this.passBox.Top = 110;
-            this.passBox.Width = 200;
+            this.passBox = new TextBox
+            {
+                UseSystemPasswordChar = true,
+                Location = new Point(10, 110),
+                Width = 200
+            };
 
             // Login button
-            this.loginButton = new Button();
-            this.loginButton.Text = "Login";
-            this.loginButton.ForeColor = Color.White;
-            this.loginButton.Left = 60;
-            this.loginButton.Top = 150;
-            this.loginButton.Width = 100;
-            this.loginButton.Height = 30;
-            this.loginButton.TabStop = false;
-            this.loginButton.Click += loginButton_Click;
+            this.loginButton = new Button
+            {
+                Text = "Login",
+                BackColor = Color.White,
+                Location = new Point(60, 150),
+                Size = new Size(100, 30),
+                TabStop = false,
+                Click += loginButton_Click
+            };
 
             // Form
-            this.components = new System.ComponentModel.Container();
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(220, 190);
-            this.BackColor = Color.DarkOliveGreen;
+            this.Text = "MC μLauncher";
+            this.AutoScaleMode = AutoScaleMode.Font;
+            this.ClientSize = new Size(220, 190);
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.ShowIcon = false;
             this.MinimizeBox = false;
             this.MaximizeBox = false;
+            this.BackColor = Color.DarkOliveGreen;
+
             this.Controls.AddRange(new Control[]
             {
                 nameLabel,
@@ -93,7 +100,6 @@ namespace MCMicroLauncher
                 this.loginButton
             });
             this.AcceptButton = loginButton;
-            this.Text = "MC μLauncher";
 
             this.ResumeLayout(false);
             this.PerformLayout();
