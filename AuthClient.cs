@@ -28,7 +28,7 @@ namespace MCMicroLauncher
                 "application/json");
 
             var res = await client
-                .PostAsync(baseUrl + "/authenticate", content);
+                .PostAsync(baseUrl + "/validate", content);
 
             return res.IsSuccessStatusCode;
         }
@@ -50,7 +50,7 @@ namespace MCMicroLauncher
                 "application/json");
 
             var res = await client
-                .PostAsync(baseUrl + "/authenticate", content);
+                .PostAsync(baseUrl + "/refresh", content);
 
             var json = await res.Content.ReadAsStringAsync();
             var model = JsonSerializer.Deserialize<AuthResponse>(json);
