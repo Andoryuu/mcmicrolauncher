@@ -1,7 +1,7 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
+using MCMicroLauncher.Layout;
 
 namespace MCMicroLauncher
 {
@@ -18,16 +18,15 @@ namespace MCMicroLauncher
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
+            this.StateMachine.Dispose();
+
             if (disposing && (components != null))
             {
                 components.Dispose();
             }
+
             base.Dispose(disposing);
         }
-
-        private TextBox nameBox;
-        private TextBox passBox;
-        private Button loginButton;
 
         #region Windows Form Designer generated code
 
@@ -37,80 +36,32 @@ namespace MCMicroLauncher
         /// </summary>
         private void InitializeComponent()
         {
+            var fullSize = new Size(220, 190);
+
             this.SuspendLayout();
-
-            // Name label
-            var nameLabel = new Label
-            {
-                Text = "Account email",
-                ForeColor = Color.White,
-                Location = new Point(10, 10)
-            }
-
-            // Name box
-            this.nameBox = new TextBox
-            {
-                Location = new Point(10, 40),
-                Width = 200
-            };
-
-            // Pass label
-            var passLabel = new Label
-            {
-                Text = "Password",
-                ForeColor = Color.White,
-                Location = new Point(10, 80)
-            };
-
-            // Pass box
-            this.passBox = new TextBox
-            {
-                UseSystemPasswordChar = true,
-                Location = new Point(10, 110),
-                Width = 200
-            };
-
-            // Login button
-            this.loginButton = new Button
-            {
-                Text = "Login",
-                BackColor = Color.White,
-                Location = new Point(60, 150),
-                Size = new Size(100, 30),
-                TabStop = false,
-                Click += loginButton_Click
-            };
 
             // Form
             this.Text = "MC μLauncher";
             this.AutoScaleMode = AutoScaleMode.Font;
-            this.ClientSize = new Size(220, 190);
+            this.ClientSize = fullSize;
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.ShowIcon = false;
             this.MinimizeBox = false;
             this.MaximizeBox = false;
             this.BackColor = Color.DarkOliveGreen;
 
-            this.Controls.AddRange(new Control[]
-            {
-                nameLabel,
-                this.nameBox,
-                passLabel,
-                this.passBox,
-                this.loginButton
-            });
-            this.AcceptButton = loginButton;
+            var cmpt = new Components(
+                this.StateMachine,
+                this.AuthClient,
+                fullSize);
+
+            this.Controls.Add(cmpt.InitializeLoginCheck());
+            this.Controls.Add(cmpt.InitializeLogin());
+            this.Controls.Add(cmpt.InitializeLauncher());
 
             this.ResumeLayout(false);
             this.PerformLayout();
         }
-
-        private async void loginButton_Click(object sender, EventArgs e)
-        {
-            await AuthClient.Authenticate(this.nameBox.Text, this.passBox.Text);
-            // Console.WriteLine($"click: {this.nameBox.Text} - {this.passBox.Text}");
-        }
-
         #endregion
     }
 }
