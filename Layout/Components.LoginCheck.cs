@@ -38,7 +38,7 @@ namespace MCMicroLauncher.Layout
                     container.Visible = true;
                 });
 
-                this.StateMachine.Call(await this.AuthClient.Validate()
+                this.StateMachine.Call(await this.AuthClient.ValidateAsync()
                     ? Trigger.ValidationSuccess
                     : Trigger.ValidationFailed);
             });
@@ -51,7 +51,7 @@ namespace MCMicroLauncher.Layout
                     container.Visible = true;
                 });
 
-                this.StateMachine.Call(await this.AuthClient.Refresh()
+                this.StateMachine.Call(await this.AuthClient.RefreshAsync()
                     ? Trigger.RefreshSuccess
                     : Trigger.RefreshFailed);
             });

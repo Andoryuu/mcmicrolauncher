@@ -53,6 +53,8 @@ namespace MCMicroLauncher
             var cmpt = new Components(
                 this.StateMachine,
                 this.AuthClient,
+                this.DataStore,
+                this.JavaCaller,
                 fullSize);
 
             this.Controls.Add(cmpt.InitializeLoginCheck());

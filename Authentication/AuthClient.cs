@@ -2,6 +2,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using MCMicroLauncher.ApplicationState;
 
 namespace MCMicroLauncher.Authentication
 {
@@ -11,89 +12,84 @@ namespace MCMicroLauncher.Authentication
         private const string baseUrl = "https://authserver.mojang.com";
         private static readonly HttpClient client = new HttpClient();
 
-        private string accessToken;
-        private string uuid;
-        private string accountName;
+        private readonly DataStore DataStore;
 
-        private readonly JavaCaller JavaCaller;
-
-        internal AuthClient(JavaCaller javaCaller)
+        internal AuthClient(
+            DataStore dataStore)
         {
-            this.JavaCaller = javaCaller;
+            this.DataStore = dataStore;
         }
 
-        internal Task<bool> Validate()
+        internal async Task<bool> ValidateAsync()
         {
-            if (string.IsNullOrWhiteSpace(this.accessToken))
+            var (accessToken, _, _) = await this.DataStore.GetLoginInfoAsync();
+
+            if (string.IsNullOrWhiteSpace(accessToken))
             {
-                return Task.FromResult(false);
+                return false;
             }
 
-            return RunInternal();
-
-            async Task<bool> RunInternal()
-            {
-                var content = new StringContent(
-                    JsonSerializer.Serialize(new
-                    {
-                        this.accessToken,
-                        clientToken
-                    }),
-                    Encoding.UTF8,
-                    "application/json");
-
-                var res = await client
-                    .PostAsync(baseUrl + "/validate", content);
-
-                return res.IsSuccessStatusCode;
-            }
-        }
-
-        internal Task<bool> Refresh()
-        {
-            if (string.IsNullOrWhiteSpace(this.accessToken)
-                || string.IsNullOrWhiteSpace(this.uuid)
-                || string.IsNullOrWhiteSpace(this.accountName))
-            {
-                return Task.FromResult(false);
-            }
-
-            return RunInternal();
-
-            async Task<bool> RunInternal()
-            {
-                var content = new StringContent(
-                    JsonSerializer.Serialize(new
-                    {
-                        this.accessToken,
-                        clientToken,
-                        selectedProfile = new
-                        {
-                            id = this.uuid,
-                            name = this.accountName
-                        }
-                    }),
-                    Encoding.UTF8,
-                    "application/json");
-
-                var res = await client
-                    .PostAsync(baseUrl + "/refresh", content);
-
-                if (!res.IsSuccessStatusCode)
+            var content = new StringContent(
+                JsonSerializer.Serialize(new
                 {
-                    return false;
-                }
+                    accessToken,
+                    clientToken
+                }),
+                Encoding.UTF8,
+                "application/json");
 
-                var json = await res.Content.ReadAsStringAsync();
-                var model = JsonSerializer.Deserialize<AuthResponse>(json);
+            var res = await client
+                .PostAsync(baseUrl + "/validate", content);
 
-                this.accessToken = model.accessToken;
-
-                return true;
-            }
+            return res.IsSuccessStatusCode;
         }
 
-        internal async Task<bool> Authenticate(
+        internal async Task<bool> RefreshAsync()
+        {
+            var (accessToken, uuid, accountName)
+                = await this.DataStore.GetLoginInfoAsync();
+
+            if (string.IsNullOrWhiteSpace(accessToken)
+                || string.IsNullOrWhiteSpace(uuid)
+                || string.IsNullOrWhiteSpace(accountName))
+            {
+                return false;
+            }
+
+            var content = new StringContent(
+                JsonSerializer.Serialize(new
+                {
+                    accessToken,
+                    clientToken,
+                    selectedProfile = new
+                    {
+                        id = uuid,
+                        name = accountName
+                    }
+                }),
+                Encoding.UTF8,
+                "application/json");
+
+            var res = await client
+                .PostAsync(baseUrl + "/refresh", content);
+
+            if (!res.IsSuccessStatusCode)
+            {
+                return false;
+            }
+
+            var json = await res.Content.ReadAsStringAsync();
+            var model = JsonSerializer.Deserialize<AuthResponse>(json);
+
+            await this.DataStore.SetLoginInfoAsync(
+                model.accessToken,
+                model.selectedProfile.id,
+                model.selectedProfile.name);
+
+            return true;
+        }
+
+        internal async Task<bool> AuthenticateAsync(
             string username,
             string password)
         {
@@ -124,22 +120,12 @@ namespace MCMicroLauncher.Authentication
             var json = await res.Content.ReadAsStringAsync();
             var model = JsonSerializer.Deserialize<AuthResponse>(json);
 
-            this.accessToken = model.accessToken;
-            this.uuid = model.selectedProfile.id;
-            this.accountName = model.selectedProfile.name;
+            await this.DataStore.SetLoginInfoAsync(
+                model.accessToken,
+                model.selectedProfile.id,
+                model.selectedProfile.name);
 
             return true;
-        }
-
-        internal string GetName() => this.accountName;
-
-        internal void LaunchMinecraft(bool useBorderlessFullscreen)
-        {
-            this.JavaCaller.LaunchMinecraft(
-                this.accountName,
-                this.uuid,
-                this.accessToken,
-                useBorderlessFullscreen);
         }
 
         private class AuthResponse

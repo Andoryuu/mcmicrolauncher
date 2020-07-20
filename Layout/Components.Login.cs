@@ -74,7 +74,7 @@ namespace MCMicroLauncher.Layout
                 loginButton.Text = "Authenticating";
 
                 this.StateMachine.Call(await this.AuthClient
-                        .Authenticate(nameBox.Text, passBox.Text)
+                        .AuthenticateAsync(nameBox.Text, passBox.Text)
                     ? Trigger.LoginSuccess
                     : Trigger.LoginFailed);
             };

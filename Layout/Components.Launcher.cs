@@ -35,6 +35,11 @@ namespace MCMicroLauncher.Layout
                 Width = this.FullSize.Width - 40
             };
 
+            fullWinOpt.CheckedChanged
+                += async (object sender, EventArgs e)
+                => await this.DataStore
+                    .SetBorderlessFullscreenAsync(fullWinOpt.Checked);
+
             // Settings group
             var optionsGroup = new GroupBox
             {
@@ -56,8 +61,8 @@ namespace MCMicroLauncher.Layout
             };
 
             launchButton.Click
-                += (object sender, EventArgs e)
-                => this.AuthClient.LaunchMinecraft(fullWinOpt.Checked);
+                += async (object sender, EventArgs e)
+                => await this.JavaCaller.LaunchMinecraftAsync();
 
             var container = new ContainerControl
             {
@@ -72,24 +77,32 @@ namespace MCMicroLauncher.Layout
                 launchButton
             });
 
-            this.StateMachine.OnEntry(
-                State.Launcher,
-                () =>
+            this.StateMachine.OnEntry(State.Launcher, async () =>
+            {
+                var (_, _, accountName)
+                    = await this.DataStore.GetLoginInfoAsync();
+
+                var borderlessFullscreen
+                    = await this.DataStore.GetBorderlessFullscreenAsync();
+
+                container.UI(() =>
                 {
-                    var userName = this.AuthClient.GetName();
-                    container.UI(() =>
-                    {
-                        launchButton.Text = "Launch";
-                        launchButton.Enabled = true;
-                        nameLabel.Text = $"Logged in as {userName}";
-                        container.Visible = true;
-                    });
+                    (borderlessFullscreen ? fullWinOpt : regWinOpt)
+                        .Checked = true;
+
+                    optionsGroup.Enabled = true;
+                    launchButton.Text = "Launch";
+                    launchButton.Enabled = true;
+                    nameLabel.Text = $"Logged in as {accountName}";
+                    container.Visible = true;
                 });
+            });
 
             this.StateMachine.OnEntry(
                 State.MinecraftRunning,
                 () => container.UI(() =>
                 {
+                    optionsGroup.Enabled = false;
                     launchButton.Text = "Running";
                     launchButton.Enabled = false;
                     container.Visible = true;

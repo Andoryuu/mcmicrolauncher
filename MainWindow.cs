@@ -10,8 +10,14 @@ namespace MCMicroLauncher
 
         private readonly AuthClient AuthClient;
 
+        private readonly DataStore DataStore;
+
+        private readonly JavaCaller JavaCaller;
+
         public MainWindow()
         {
+            this.DataStore = new DataStore();
+
             this.StateMachine = new StateMachine<State, Trigger>
             {
                 { (State.Closed, Trigger.Start), State.Validation },
@@ -30,7 +36,8 @@ namespace MCMicroLauncher
                 { (State.MinecraftRunning, Trigger.MinecraftStopped), State.Launcher }
             };
 
-            this.AuthClient = new AuthClient(new JavaCaller(this.StateMachine));
+            this.AuthClient = new AuthClient(this.DataStore);
+            this.JavaCaller = new JavaCaller(this.StateMachine, this.DataStore);
 
             InitializeComponent();
 
