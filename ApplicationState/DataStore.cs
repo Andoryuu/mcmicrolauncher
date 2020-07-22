@@ -59,8 +59,10 @@ namespace MCMicroLauncher.ApplicationState
                 return Task.FromResult(this.config);
             }
 
-            if (!File.Exists(DataFileName))
+            if (!File.Exists(ConfigFileName))
             {
+                Log.Error("Config file not found");
+
                 return Task.FromResult(new ConfigModel());
             }
 

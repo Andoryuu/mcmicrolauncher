@@ -7,7 +7,14 @@ namespace MCMicroLauncher.Layout
     {
         internal static void UI(this Control control, Action updates)
         {
-            control.Invoke(new MethodInvoker(updates));
+            if (control.InvokeRequired)
+            {
+                control.Invoke(new MethodInvoker(updates));
+            }
+            else
+            {
+                updates();
+            }
         }
     }
 }

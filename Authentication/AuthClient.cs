@@ -22,10 +22,13 @@ namespace MCMicroLauncher.Authentication
 
         internal async Task<bool> ValidateAsync()
         {
+            Log.Info("Validating token");
+
             var (accessToken, _, _) = await this.DataStore.GetLoginInfoAsync();
 
             if (string.IsNullOrWhiteSpace(accessToken))
             {
+                Log.Info("Validation skipped, no cached token");
                 return false;
             }
 
@@ -41,11 +44,16 @@ namespace MCMicroLauncher.Authentication
             var res = await client
                 .PostAsync(baseUrl + "/validate", content);
 
+            Log.Info($"Validation {(res.IsSuccessStatusCode ? "" : "un")}successful",
+                    $"{(int)res.StatusCode}");
+
             return res.IsSuccessStatusCode;
         }
 
         internal async Task<bool> RefreshAsync()
         {
+            Log.Info("Refreshing token");
+
             var (accessToken, uuid, accountName)
                 = await this.DataStore.GetLoginInfoAsync();
 
@@ -53,6 +61,7 @@ namespace MCMicroLauncher.Authentication
                 || string.IsNullOrWhiteSpace(uuid)
                 || string.IsNullOrWhiteSpace(accountName))
             {
+                Log.Info("Refreshing skipped, no cached info");
                 return false;
             }
 
@@ -73,18 +82,25 @@ namespace MCMicroLauncher.Authentication
             var res = await client
                 .PostAsync(baseUrl + "/refresh", content);
 
+            var response = await res.Content.ReadAsStringAsync();
+
             if (!res.IsSuccessStatusCode)
             {
+                Log.Info("Refresh failed",
+                        $"{(int)res.StatusCode}",
+                        response);
+
                 return false;
             }
 
-            var json = await res.Content.ReadAsStringAsync();
-            var model = JsonSerializer.Deserialize<AuthResponse>(json);
+            var model = JsonSerializer.Deserialize<AuthResponse>(response);
 
             await this.DataStore.SetLoginInfoAsync(
                 model.accessToken,
                 model.selectedProfile.id,
                 model.selectedProfile.name);
+
+            Log.Info("Refresh successful");
 
             return true;
         }
@@ -93,6 +109,8 @@ namespace MCMicroLauncher.Authentication
             string username,
             string password)
         {
+            Log.Info("Authenticating");
+
             var content = new StringContent(
                 JsonSerializer.Serialize(new
                 {
@@ -112,18 +130,25 @@ namespace MCMicroLauncher.Authentication
             var res = await client
                 .PostAsync(baseUrl + "/authenticate", content);
 
+            var response = await res.Content.ReadAsStringAsync();
+
             if (!res.IsSuccessStatusCode)
             {
+                Log.Warn("Authentication failed",
+                        $"{(int)res.StatusCode}",
+                        response);
+
                 return false;
             }
 
-            var json = await res.Content.ReadAsStringAsync();
-            var model = JsonSerializer.Deserialize<AuthResponse>(json);
+            var model = JsonSerializer.Deserialize<AuthResponse>(response);
 
             await this.DataStore.SetLoginInfoAsync(
                 model.accessToken,
                 model.selectedProfile.id,
                 model.selectedProfile.name);
+
+            Log.Info("Authentication successful");
 
             return true;
         }

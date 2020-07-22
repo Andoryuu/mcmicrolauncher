@@ -22,9 +22,25 @@ namespace MCMicroLauncher.Authentication
 
         internal async Task LaunchMinecraftAsync()
         {
+            Log.Info("Preparing MC launch");
+
             var (accessToken, uuid, accountName) = await this.DataStore.GetLoginInfoAsync();
             var borderlessFullscreen = await this.DataStore.GetBorderlessFullscreenAsync();
             var config = await this.DataStore.GetConfigAsync();
+
+            if (string.IsNullOrWhiteSpace(accessToken)
+                || string.IsNullOrWhiteSpace(uuid)
+                || string.IsNullOrWhiteSpace(accountName)
+                || string.IsNullOrWhiteSpace(config.AssetsDirPath)
+                || string.IsNullOrWhiteSpace(config.ClientJarPath)
+                || string.IsNullOrWhiteSpace(config.GameDirPath)
+                || string.IsNullOrWhiteSpace(config.LibraryPath)
+                || string.IsNullOrWhiteSpace(config.Version)
+                || config.Libraries == null)
+            {
+                Log.Error("Aborting MC launch, missing config data");
+                return;
+            }
 
             var libraries = string.Join(";", config.Libraries);
             if (!config.Libraries.Any(x => x == config.ClientJarPath))
@@ -74,12 +90,15 @@ namespace MCMicroLauncher.Authentication
                 EnableRaisingEvents = true
             };
 
-            process.Exited
-                += (object sender, EventArgs e)
-                => this.StateMachine.Call(Trigger.MinecraftStopped);
+            process.Exited += (object sender, EventArgs e) =>
+            {
+                Log.Info("MC stopped");
+                this.StateMachine.Call(Trigger.MinecraftStopped);
+            };
 
             this.StateMachine.Call(Trigger.MinecraftLaunched);
 
+            Log.Info("Launching MC");
             process.Start();
         }
     }

@@ -38,13 +38,20 @@ namespace MCMicroLauncher.ApplicationState
                 {
                     while (reader.TryRead(out var trigger))
                     {
-                        HandleTrigger(trigger);
+                        try
+                        {
+                            await HandleTrigger(trigger);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("Handler crashed, skipping trigger", ex);
+                        }
                     }
                 }
             }, TaskCreationOptions.LongRunning);
         }
 
-        private void HandleTrigger(TTriggers trigger)
+        private async Task HandleTrigger(TTriggers trigger)
         {
             if (!this.transitions
                 .TryGetValue((this.internalState, trigger), out var newState))
@@ -56,7 +63,7 @@ namespace MCMicroLauncher.ApplicationState
             {
                 foreach (var action in leaveActions)
                 {
-                    action();
+                    await action();
                 }
             }
 
@@ -66,7 +73,7 @@ namespace MCMicroLauncher.ApplicationState
             {
                 foreach (var action in entryActions)
                 {
-                    action();
+                    await action();
                 }
             }
         }
