@@ -10,8 +10,8 @@ namespace MCMicroLauncher.Authentication
 {
     internal class JavaCaller
     {
-        private static readonly EnumerationOptions LibSearchOptions
-            = new() { RecurseSubdirectories = true };
+        // private static readonly EnumerationOptions LibSearchOptions
+        //     = new() { RecurseSubdirectories = true };
 
         private readonly StateMachine<State, Trigger> StateMachine;
         private readonly DataStore DataStore;
@@ -74,12 +74,18 @@ namespace MCMicroLauncher.Authentication
             if (string.IsNullOrWhiteSpace(accessToken)
                 || string.IsNullOrWhiteSpace(uuid)
                 || string.IsNullOrWhiteSpace(accountName)
-                || string.IsNullOrWhiteSpace(config.Version)
                 || string.IsNullOrWhiteSpace(config.ClientPath)
                 || string.IsNullOrWhiteSpace(config.AssetsFolder)
                 || string.IsNullOrWhiteSpace(config.BinariesFolder)
                 || string.IsNullOrWhiteSpace(config.LibrariesFolder)
-                || string.IsNullOrWhiteSpace(config.JavaArguments))
+                || config.Libraries == null
+                || config.Libraries.Length == 0
+                || string.IsNullOrWhiteSpace(config.JavaArguments)
+                || config.FmlOptions == null
+                || string.IsNullOrWhiteSpace(config.FmlOptions.ForgeVersion)
+                || string.IsNullOrWhiteSpace(config.FmlOptions.McVersion)
+                || string.IsNullOrWhiteSpace(config.FmlOptions.ForgeGroup)
+                || string.IsNullOrWhiteSpace(config.FmlOptions.McpVersion))
             {
                 Log.Error("Aborting MC launch, missing config data");
                 return null;
@@ -108,10 +114,17 @@ namespace MCMicroLauncher.Authentication
             binariesDir = NormalizeArgumentPath(binariesDir);
             clientPath = NormalizeArgumentPath(clientPath);
 
-            var libraries = Directory
-                .GetFiles(librariesDir, "*.jar", LibSearchOptions)
+            var libraries = config.Libraries
+                .Select(lib => Path.Combine(librariesDir, lib))
                 .Select(NormalizeArgumentPath)
                 .JoinUsing(";");
+
+            // not all libraries may be linked
+            // TODO: findout how to get a list to avoid hardcoding
+            // var libraries = Directory
+            //     .GetFiles(librariesDir, "*.jar", LibSearchOptions)
+            //     .Select(NormalizeArgumentPath)
+            //     .JoinUsing(";");
 
             libraries += ";" + clientPath;
 
@@ -134,22 +147,26 @@ namespace MCMicroLauncher.Authentication
                 "\"-Dos.name=Windows 10\"",
                 "-Dos.version=10.0",
                 "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump",
+                "-Xss1M",
                 "-Djava.library.path=" + binariesDir,
-                "-Dminecraft.client.jar=" + clientPath,
                 "-cp " + libraries,
                 config.JavaArguments,
                 borderlessFullscreen ? "-Dorg.lwjgl.opengl.Window.undecorated=true" : "",
-                "net.minecraft.launchwrapper.Launch",
+                "cpw.mods.modlauncher.Launcher",
                 "--username " + accountName,
-                "--version " + config.Version,
+                $"--version {config.FmlOptions.McVersion}-forge-{config.FmlOptions.ForgeVersion}",
                 "--gameDir " + NormalizeArgumentPath(SystemInfo.RunningDirectory),
                 "--assetsDir " + assetsDir,
                 "--assetIndex " + assetsIndex,
                 "--uuid " + uuid,
                 "--accessToken " + accessToken,
                 "--userType mojang",
-                "--tweakClass net.minecraftforge.fml.common.launcher.FMLTweaker",
-                "--versionType Forge"
+                "--versionType release",
+                "--launchTarget fmlclient",
+                "--fml.forgeVersion " + config.FmlOptions.ForgeVersion,
+                "--fml.mcVersion " + config.FmlOptions.McVersion,
+                "--fml.forgeGroup " + config.FmlOptions.ForgeGroup,
+                "--fml.mcpVersion " + config.FmlOptions.McpVersion
             }.JoinUsing(" ");
 
             if (borderlessFullscreen)

@@ -140,12 +140,23 @@ namespace MCMicroLauncher.ApplicationState
 
         internal class ConfigModel
         {
-            public string Version { get; set; }
             public string ClientPath { get; set; }
             public string AssetsFolder { get; set; }
             public string BinariesFolder { get; set; }
             public string LibrariesFolder { get; set; }
             public string JavaArguments { get; set; }
+
+            public string[] Libraries { get; set; }
+
+            public FmlOptionsModel FmlOptions { get; set; }
+
+            public class FmlOptionsModel
+            {
+                public string ForgeVersion { get; set; }
+                public string McVersion { get; set; }
+                public string ForgeGroup { get; set; }
+                public string McpVersion { get; set; }
+            }
         }
     }
 }
