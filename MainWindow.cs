@@ -22,14 +22,17 @@ namespace MCMicroLauncher
             {
                 { (State.Closed, Trigger.Start), State.Validation },
 
-                { (State.Validation, Trigger.ValidationSuccess), State.Launcher },
+                { (State.Validation, Trigger.ValidationSuccess), State.OptionsCheck },
                 { (State.Validation, Trigger.ValidationFailed), State.Refresh },
 
-                { (State.Refresh, Trigger.RefreshSuccess), State.Launcher },
+                { (State.Refresh, Trigger.RefreshSuccess), State.OptionsCheck },
                 { (State.Refresh, Trigger.RefreshFailed), State.Login },
 
-                { (State.Login, Trigger.LoginSuccess), State.Launcher },
+                { (State.Login, Trigger.LoginSuccess), State.OptionsCheck },
                 { (State.Login, Trigger.LoginFailed), State.Login },
+
+                { (State.OptionsCheck, Trigger.OptionsResolved), State.Launcher },
+                { (State.OptionsCheck, Trigger.OptionsMissing), State.OptionsCheck },
 
                 { (State.Launcher, Trigger.MinecraftLaunched), State.MinecraftRunning },
 

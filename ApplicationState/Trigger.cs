@@ -9,6 +9,8 @@ namespace MCMicroLauncher.ApplicationState
         RefreshFailed,
         LoginSuccess,
         LoginFailed,
+        OptionsResolved,
+        OptionsMissing,
         MinecraftLaunched,
         MinecraftStopped
     }

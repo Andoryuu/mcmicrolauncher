@@ -1,17 +1,20 @@
+using System;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using MCMicroLauncher.ApplicationState;
+using MCMicroLauncher.Utils;
 
 namespace MCMicroLauncher.Authentication
 {
     internal class AuthClient
     {
-        private const string clientToken = "MCMicroLauncher";
-        private const string baseUrl = "https://authserver.mojang.com";
-        private static readonly HttpClient client = new HttpClient();
+        private static readonly HttpClient client = new()
+        {
+            BaseAddress = new Uri(Constants.BaseAuthUrl)
+        };
 
         private readonly DataStore DataStore;
 
@@ -37,13 +40,12 @@ namespace MCMicroLauncher.Authentication
                 JsonSerializer.Serialize(new
                 {
                     accessToken,
-                    clientToken
+                    Constants.ClientToken
                 }),
                 Encoding.UTF8,
                 "application/json");
 
-            var res = await client
-                .PostAsync(baseUrl + "/validate", content);
+            var res = await client.PostAsync("/validate", content);
 
             var response = await res.Content.ReadAsStringAsync();
 
@@ -73,13 +75,12 @@ namespace MCMicroLauncher.Authentication
                 JsonSerializer.Serialize(new
                 {
                     accessToken,
-                    clientToken
+                    Constants.ClientToken
                 }),
                 Encoding.UTF8,
                 "application/json");
 
-            var res = await client
-                .PostAsync(baseUrl + "/refresh", content);
+            var res = await client.PostAsync("/refresh", content);
 
             var response = await res.Content.ReadAsStringAsync();
 
@@ -121,13 +122,12 @@ namespace MCMicroLauncher.Authentication
 
                     username,
                     password,
-                    clientToken
+                    Constants.ClientToken
                 }),
                 Encoding.UTF8,
                 "application/json");
 
-            var res = await client
-                .PostAsync(baseUrl + "/authenticate", content);
+            var res = await client.PostAsync("/authenticate", content);
 
             var response = await res.Content.ReadAsStringAsync();
 

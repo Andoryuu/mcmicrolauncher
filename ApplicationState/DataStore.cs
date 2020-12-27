@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using MCMicroLauncher.Utils;
 
 namespace MCMicroLauncher.ApplicationState
 {
@@ -8,10 +9,6 @@ namespace MCMicroLauncher.ApplicationState
     {
         private static readonly JsonSerializerOptions DataSerializationOptions
             = new() { WriteIndented = true };
-
-        private const string DataFileName = "./data.json";
-
-        private const string ConfigFileName = "./config.json";
 
         private DataModel data;
 
@@ -62,7 +59,7 @@ namespace MCMicroLauncher.ApplicationState
                 return Task.FromResult(this.config);
             }
 
-            if (!File.Exists(ConfigFileName))
+            if (!File.Exists(Constants.ConfigFileName))
             {
                 Log.Error("Config file not found");
 
@@ -73,7 +70,7 @@ namespace MCMicroLauncher.ApplicationState
 
             async Task<ConfigModel> RunInternal()
             {
-                using var file = File.OpenRead(ConfigFileName);
+                using var file = File.OpenRead(Constants.ConfigFileName);
 
                 this.config = await JsonSerializer
                     .DeserializeAsync<ConfigModel>(file);
@@ -89,7 +86,7 @@ namespace MCMicroLauncher.ApplicationState
                 return Task.CompletedTask;
             }
 
-            if (!File.Exists(DataFileName))
+            if (!File.Exists(Constants.DataFileName))
             {
                 this.data = new DataModel();
 
@@ -100,7 +97,7 @@ namespace MCMicroLauncher.ApplicationState
 
             async Task RunInternal()
             {
-                using var file = File.OpenRead(DataFileName);
+                using var file = File.OpenRead(Constants.DataFileName);
 
                 if (file.Length == 0)
                 {
@@ -126,7 +123,7 @@ namespace MCMicroLauncher.ApplicationState
 
             async Task RunInternal()
             {
-                using var file = File.Create(DataFileName);
+                using var file = File.Create(Constants.DataFileName);
 
                 await JsonSerializer
                     .SerializeAsync(file, this.data, DataSerializationOptions);
@@ -135,10 +132,10 @@ namespace MCMicroLauncher.ApplicationState
 
         private class DataModel
         {
-            public string AccessToken {get;set;}
-            public string Uuid {get;set;}
-            public string AccountName {get;set;}
-            public bool BorderlessFullscreen {get;set;}
+            public string AccessToken { get; set; }
+            public string Uuid { get; set; }
+            public string AccountName { get; set; }
+            public bool BorderlessFullscreen { get; set; }
         }
 
         internal class ConfigModel

@@ -1,9 +1,16 @@
+using System.Collections.Generic;
+
 namespace MCMicroLauncher.Utils
 {
-    public static class CollectionExtensions
+    internal static class CollectionExtensions
     {
-        public static string JoinUsing(
+        internal static string JoinUsing(
             this string[] source,
+            string separator)
+        => string.Join(separator, source);
+
+        internal static string JoinUsing(
+            this IEnumerable<string> source,
             string separator)
         => string.Join(separator, source);
     }

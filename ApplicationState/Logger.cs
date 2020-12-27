@@ -6,10 +6,8 @@ namespace MCMicroLauncher.ApplicationState
 {
     internal static class Log
     {
-        private const string LogFilePath = "./launcher.log";
-
         static Log()
-        => File.Delete(LogFilePath);
+        => File.Delete(Constants.LogFilePath);
 
         internal static void Error(string msg, Exception ex)
         => Internal("Error", msg, ex.Message, ex.StackTrace);
@@ -37,7 +35,7 @@ namespace MCMicroLauncher.ApplicationState
 
             log += "\n";
 
-            File.AppendAllText(LogFilePath, log);
+            File.AppendAllText(Constants.LogFilePath, log);
         }
     }
 }

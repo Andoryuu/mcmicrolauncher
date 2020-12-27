@@ -49,7 +49,9 @@ namespace MCMicroLauncher.ApplicationState
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("Handler crashed, skipping trigger", ex);
+                        Log.Error(
+                            $"Handler crashed, skipping trigger ({this.internalState}->{trigger})",
+                            ex);
                     }
                 }
             }

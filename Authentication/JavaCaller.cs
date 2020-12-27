@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using MCMicroLauncher.ApplicationState;
 using MCMicroLauncher.Utils;
 
@@ -57,7 +56,7 @@ namespace MCMicroLauncher.Authentication
 
             this.StateMachine.Call(Trigger.MinecraftLaunched);
 
-            Log.Info("Launching MC");
+            Log.Info("Launching MC", arguments);
             process.Start();
         }
 
@@ -106,8 +105,12 @@ namespace MCMicroLauncher.Authentication
                 return null;
             }
 
+            binariesDir = NormalizeArgumentPath(binariesDir);
+            clientPath = NormalizeArgumentPath(clientPath);
+
             var libraries = Directory
                 .GetFiles(librariesDir, "*.jar", LibSearchOptions)
+                .Select(NormalizeArgumentPath)
                 .JoinUsing(";");
 
             libraries += ";" + clientPath;
@@ -124,6 +127,7 @@ namespace MCMicroLauncher.Authentication
             }
 
             assetsIndex = Path.GetFileName(assetsIndex).Replace(".json", "");
+            assetsDir = NormalizeArgumentPath(assetsDir);
 
             var arguments = new[]
             {
@@ -138,7 +142,7 @@ namespace MCMicroLauncher.Authentication
                 "net.minecraft.launchwrapper.Launch",
                 "--username " + accountName,
                 "--version " + config.Version,
-                "--gameDir " + AppDomain.CurrentDomain.BaseDirectory,
+                "--gameDir " + NormalizeArgumentPath(SystemInfo.RunningDirectory),
                 "--assetsDir " + assetsDir,
                 "--assetIndex " + assetsIndex,
                 "--uuid " + uuid,
@@ -150,7 +154,7 @@ namespace MCMicroLauncher.Authentication
 
             if (borderlessFullscreen)
             {
-                var size = SystemInformation.PrimaryMonitorSize;
+                var size = SystemInfo.MonitorSize;
                 arguments += $" --width {size.Width} --height {size.Height} ";
             }
 
@@ -161,7 +165,7 @@ namespace MCMicroLauncher.Authentication
             string relativePath,
             out string localPath)
         {
-            var currentDir = AppDomain.CurrentDomain.BaseDirectory;
+            var currentDir = SystemInfo.RunningDirectory;
             localPath = Path.Combine(currentDir, relativePath);
 
             var exists = Directory.Exists(localPath)
@@ -174,5 +178,8 @@ namespace MCMicroLauncher.Authentication
 
             return exists;
         }
+
+        private static string NormalizeArgumentPath(string filePath)
+        => filePath.Contains(' ') ? $"\"{filePath}\"" : filePath;
     }
 }
