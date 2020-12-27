@@ -6,6 +6,9 @@ namespace MCMicroLauncher.ApplicationState
 {
     internal class DataStore
     {
+        private static readonly JsonSerializerOptions DataSerializationOptions
+            = new() { WriteIndented = true };
+
         private const string DataFileName = "./data.json";
 
         private const string ConfigFileName = "./config.json";
@@ -125,7 +128,8 @@ namespace MCMicroLauncher.ApplicationState
             {
                 using var file = File.Create(DataFileName);
 
-                await JsonSerializer.SerializeAsync(file, this.data);
+                await JsonSerializer
+                    .SerializeAsync(file, this.data, DataSerializationOptions);
             }
         }
 
@@ -139,12 +143,12 @@ namespace MCMicroLauncher.ApplicationState
 
         internal class ConfigModel
         {
-            public string LibraryPath {get;set;}
-            public string ClientJarPath {get;set;}
-            public string[] Libraries {get;set;}
-            public string Version {get;set;}
-            public string GameDirPath {get;set;}
-            public string AssetsDirPath {get;set;}
+            public string Version { get; set; }
+            public string ClientPath { get; set; }
+            public string AssetsFolder { get; set; }
+            public string BinariesFolder { get; set; }
+            public string LibrariesFolder { get; set; }
+            public string JavaArguments { get; set; }
         }
     }
 }

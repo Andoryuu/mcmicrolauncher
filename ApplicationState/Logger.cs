@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using MCMicroLauncher.Utils;
 
 namespace MCMicroLauncher.ApplicationState
 {
@@ -13,8 +14,8 @@ namespace MCMicroLauncher.ApplicationState
         internal static void Error(string msg, Exception ex)
         => Internal("Error", msg, ex.Message, ex.StackTrace);
 
-        internal static void Error(string msg)
-        => Internal("Error", msg);
+        internal static void Error(string msg, params string[] moreMsgs)
+        => Internal("Error", msg, moreMsgs);
 
         internal static void Info(string msg, params string[] moreMsgs)
         => Internal("Info", msg, moreMsgs);
@@ -31,7 +32,7 @@ namespace MCMicroLauncher.ApplicationState
 
             if (moreMsgs?.Length > 0)
             {
-                log += " | " + string.Join(" | ", moreMsgs);
+                log += " | " + moreMsgs.JoinUsing(" | ");
             }
 
             log += "\n";

@@ -32,23 +32,27 @@ namespace MCMicroLauncher.ApplicationState
             var reader = channel.Reader;
             this.triggerQueue = channel.Writer;
 
-            Task.Factory.StartNew(async () =>
+            // fire and forget
+            _ = this.RunWorkerLoopAsync(reader);
+        }
+
+        private async Task RunWorkerLoopAsync(
+            ChannelReader<TTriggers> reader)
+        {
+            while (await reader.WaitToReadAsync())
             {
-                while (await reader.WaitToReadAsync())
+                while (reader.TryRead(out var trigger))
                 {
-                    while (reader.TryRead(out var trigger))
+                    try
                     {
-                        try
-                        {
-                            await HandleTrigger(trigger);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error("Handler crashed, skipping trigger", ex);
-                        }
+                        await HandleTrigger(trigger);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Handler crashed, skipping trigger", ex);
                     }
                 }
-            }, TaskCreationOptions.LongRunning);
+            }
         }
 
         private async Task HandleTrigger(TTriggers trigger)

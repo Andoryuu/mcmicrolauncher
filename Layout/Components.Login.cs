@@ -2,7 +2,6 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using MCMicroLauncher.ApplicationState;
-using MCMicroLauncher.Authentication;
 
 namespace MCMicroLauncher.Layout
 {

@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using MCMicroLauncher.ApplicationState;
 
@@ -44,8 +45,11 @@ namespace MCMicroLauncher.Authentication
             var res = await client
                 .PostAsync(baseUrl + "/validate", content);
 
+            var response = await res.Content.ReadAsStringAsync();
+
             Log.Info($"Validation {(res.IsSuccessStatusCode ? "" : "un")}successful",
-                    $"{(int)res.StatusCode}");
+                    $"{(int)res.StatusCode}",
+                    response);
 
             return res.IsSuccessStatusCode;
         }
@@ -69,12 +73,7 @@ namespace MCMicroLauncher.Authentication
                 JsonSerializer.Serialize(new
                 {
                     accessToken,
-                    clientToken,
-                    selectedProfile = new
-                    {
-                        id = uuid,
-                        name = accountName
-                    }
+                    clientToken
                 }),
                 Encoding.UTF8,
                 "application/json");
@@ -96,9 +95,9 @@ namespace MCMicroLauncher.Authentication
             var model = JsonSerializer.Deserialize<AuthResponse>(response);
 
             await this.DataStore.SetLoginInfoAsync(
-                model.accessToken,
-                model.selectedProfile.id,
-                model.selectedProfile.name);
+                model.AccessToken,
+                model.SelectedProfile.Id,
+                model.SelectedProfile.Name);
 
             Log.Info("Refresh successful");
 
@@ -144,9 +143,9 @@ namespace MCMicroLauncher.Authentication
             var model = JsonSerializer.Deserialize<AuthResponse>(response);
 
             await this.DataStore.SetLoginInfoAsync(
-                model.accessToken,
-                model.selectedProfile.id,
-                model.selectedProfile.name);
+                model.AccessToken,
+                model.SelectedProfile.Id,
+                model.SelectedProfile.Name);
 
             Log.Info("Authentication successful");
 
@@ -155,15 +154,19 @@ namespace MCMicroLauncher.Authentication
 
         private class AuthResponse
         {
-            public string accessToken {get;set;}
+            [JsonPropertyName("accessToken")]
+            public string AccessToken {get;set;}
 
-            public SelectedProfile selectedProfile {get;set;}
+            [JsonPropertyName("selectedProfile")]
+            public SelectedProfileModel SelectedProfile {get;set;}
 
-            public class SelectedProfile
+            public class SelectedProfileModel
             {
-                public string name {get;set;}
+                [JsonPropertyName("name")]
+                public string Name {get;set;}
 
-                public string id {get;set;}
+                [JsonPropertyName("id")]
+                public string Id {get;set;}
             }
         }
     }
