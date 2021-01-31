@@ -80,12 +80,7 @@ namespace MCMicroLauncher.Authentication
                 || string.IsNullOrWhiteSpace(config.LibrariesFolder)
                 || config.Libraries == null
                 || config.Libraries.Length == 0
-                || string.IsNullOrWhiteSpace(config.JavaArguments)
-                || config.FmlOptions == null
-                || string.IsNullOrWhiteSpace(config.FmlOptions.ForgeVersion)
-                || string.IsNullOrWhiteSpace(config.FmlOptions.McVersion)
-                || string.IsNullOrWhiteSpace(config.FmlOptions.ForgeGroup)
-                || string.IsNullOrWhiteSpace(config.FmlOptions.McpVersion))
+                || string.IsNullOrWhiteSpace(config.JavaArguments))
             {
                 Log.Error("Aborting MC launch, missing config data");
                 return null;
@@ -110,6 +105,8 @@ namespace MCMicroLauncher.Authentication
             {
                 return null;
             }
+
+            var version = Path.GetFileNameWithoutExtension(clientPath);
 
             binariesDir = NormalizeArgumentPath(binariesDir);
             clientPath = NormalizeArgumentPath(clientPath);
@@ -139,7 +136,13 @@ namespace MCMicroLauncher.Authentication
                 return null;
             }
 
-            assetsIndex = Path.GetFileName(assetsIndex).Replace(".json", "");
+            if (!TryGetLoaderParams(config, assetsDir, out var loaderParams))
+            {
+                Log.Error("Invalid loader settings");
+                return null;
+            }
+
+            assetsIndex = Path.GetFileNameWithoutExtension(assetsIndex);
             assetsDir = NormalizeArgumentPath(assetsDir);
 
             var arguments = new[]
@@ -152,21 +155,16 @@ namespace MCMicroLauncher.Authentication
                 "-cp " + libraries,
                 config.JavaArguments,
                 borderlessFullscreen ? "-Dorg.lwjgl.opengl.Window.undecorated=true" : "",
-                "cpw.mods.modlauncher.Launcher",
+                loaderParams,
                 "--username " + accountName,
-                $"--version {config.FmlOptions.McVersion}-forge-{config.FmlOptions.ForgeVersion}",
+                "--version " + version,
                 "--gameDir " + NormalizeArgumentPath(SystemInfo.RunningDirectory),
                 "--assetsDir " + assetsDir,
                 "--assetIndex " + assetsIndex,
                 "--uuid " + uuid,
                 "--accessToken " + accessToken,
                 "--userType mojang",
-                "--versionType release",
-                "--launchTarget fmlclient",
-                "--fml.forgeVersion " + config.FmlOptions.ForgeVersion,
-                "--fml.mcVersion " + config.FmlOptions.McVersion,
-                "--fml.forgeGroup " + config.FmlOptions.ForgeGroup,
-                "--fml.mcpVersion " + config.FmlOptions.McpVersion
+                "--versionType release"
             }.JoinUsing(" ");
 
             if (borderlessFullscreen)
@@ -198,5 +196,43 @@ namespace MCMicroLauncher.Authentication
 
         private static string NormalizeArgumentPath(string filePath)
         => filePath.Contains(' ') ? $"\"{filePath}\"" : filePath;
+
+        private static bool TryGetLoaderParams(
+            DataStore.ConfigModel config,
+            string assetsDir,
+            out string loaderParams)
+        {
+            loaderParams = null;
+
+            if (config.FmlOptions == null)
+            {
+                var assetsLogConfigsPath = Path.Combine(assetsDir, "log_configs");
+                var assetsLogConfig = Directory
+                    .GetFiles(assetsLogConfigsPath, "*.xml")
+                    .FirstOrDefault();
+
+                if (!string.IsNullOrWhiteSpace(assetsLogConfig))
+                {
+                    assetsLogConfig = NormalizeArgumentPath(assetsLogConfig);
+                    loaderParams = $"-Dlog4j.configurationFile={assetsLogConfig} net.fabricmc.loader.launch.knot.KnotClient";
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(config.FmlOptions.ForgeVersion)
+                && !string.IsNullOrWhiteSpace(config.FmlOptions.McVersion)
+                && !string.IsNullOrWhiteSpace(config.FmlOptions.ForgeGroup)
+                && !string.IsNullOrWhiteSpace(config.FmlOptions.McpVersion))
+            {
+                loaderParams = new[] {
+                    "cpw.mods.modlauncher.Launcher",
+                    "--launchTarget fmlclient",
+                    "--fml.forgeVersion " + config.FmlOptions.ForgeVersion,
+                    "--fml.mcVersion " + config.FmlOptions.McVersion,
+                    "--fml.forgeGroup " + config.FmlOptions.ForgeGroup,
+                    "--fml.mcpVersion " + config.FmlOptions.McpVersion,
+                }.JoinUsing(" ");
+            }
+
+            return loaderParams != null;
+        }
     }
 }
