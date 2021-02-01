@@ -72,6 +72,8 @@ namespace MCMicroLauncher.Layout
                 loginButton.Enabled = false;
                 loginButton.Text = "Authenticating";
 
+                await this.DataStore.SetLoginName(nameBox.Text);
+
                 this.StateMachine.Call(await this.AuthClient
                         .AuthenticateAsync(nameBox.Text, passBox.Text)
                     ? Trigger.LoginSuccess
@@ -95,17 +97,26 @@ namespace MCMicroLauncher.Layout
 
             this.StateMachine.OnEntry(
                 State.Login,
-                () => container.UI(() =>
+                async () =>
                 {
-                    loginButton.Text = "Login";
-                    loginButton.Enabled = true;
-                    nameBox.Text = "";
-                    nameBox.Enabled = true;
-                    passBox.Text = "";
-                    passBox.Enabled = true;
-                    container.Visible = true;
-                    nameBox.Focus();
-                }));
+                    var loginName = await this.DataStore.GetLoginName();
+
+                    container.UI(() =>
+                    {
+                        loginButton.Text = "Login";
+                        loginButton.Enabled = true;
+                        nameBox.Text = loginName;
+                        nameBox.Enabled = true;
+                        passBox.Text = "";
+                        passBox.Enabled = true;
+                        container.Visible = true;
+
+                        (string.IsNullOrWhiteSpace(loginName)
+                            ? nameBox
+                            : passBox)
+                            .Focus();
+                    });
+                });
 
             this.StateMachine.OnLeave(
                 State.Login,

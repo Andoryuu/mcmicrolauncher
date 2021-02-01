@@ -35,6 +35,22 @@ namespace MCMicroLauncher.ApplicationState
             await this.PersistData();
         }
 
+        internal async Task<string> GetLoginName()
+        {
+            await this.EnsureData();
+
+            return this.data.LoginName;
+        }
+
+        internal async Task SetLoginName(string loginName)
+        {
+            await this.EnsureData();
+
+            this.data.LoginName = loginName;
+
+            await this.PersistData();
+        }
+
         internal async Task<bool> GetBorderlessFullscreenAsync()
         {
             await this.EnsureData();
@@ -135,6 +151,7 @@ namespace MCMicroLauncher.ApplicationState
             public string AccessToken { get; set; }
             public string Uuid { get; set; }
             public string AccountName { get; set; }
+            public string LoginName { get; set; }
             public bool BorderlessFullscreen { get; set; }
         }
 
