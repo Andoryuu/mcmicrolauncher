@@ -6,6 +6,7 @@ namespace MCMicroLauncher.ApplicationState
         Validation,
         Refresh,
         Login,
+        LoadingAssets,
         OptionsCheck,
         Launcher,
         MinecraftRunning

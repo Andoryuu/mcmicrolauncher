@@ -86,22 +86,22 @@ namespace MCMicroLauncher.Authentication
                 return null;
             }
 
-            if (!TryGetLocalPath(config.AssetsFolder, out var assetsDir))
+            if (!FileSystemUtils.TryGetLocalPath(config.AssetsFolder, out var assetsDir))
             {
                 return null;
             }
 
-            if (!TryGetLocalPath(config.BinariesFolder, out var binariesDir))
+            if (!FileSystemUtils.TryGetLocalPath(config.BinariesFolder, out var binariesDir))
             {
                 return null;
             }
 
-            if (!TryGetLocalPath(config.LibrariesFolder, out var librariesDir))
+            if (!FileSystemUtils.TryGetLocalPath(config.LibrariesFolder, out var librariesDir))
             {
                 return null;
             }
 
-            if (!TryGetLocalPath(config.ClientPath, out var clientPath))
+            if (!FileSystemUtils.TryGetLocalPath(config.ClientPath, out var clientPath))
             {
                 return null;
             }
@@ -174,24 +174,6 @@ namespace MCMicroLauncher.Authentication
             }
 
             return arguments;
-        }
-
-        private static bool TryGetLocalPath(
-            string relativePath,
-            out string localPath)
-        {
-            var currentDir = SystemInfo.RunningDirectory;
-            localPath = Path.Combine(currentDir, relativePath);
-
-            var exists = Directory.Exists(localPath)
-                || File.Exists(localPath);
-
-            if (!exists)
-            {
-                Log.Error("File or directory was not found", localPath);
-            }
-
-            return exists;
         }
 
         private static string NormalizeArgumentPath(string filePath)

@@ -9,6 +9,7 @@ namespace MCMicroLauncher.ApplicationState
         RefreshFailed,
         LoginSuccess,
         LoginFailed,
+        AssetsLoaded,
         OptionsResolved,
         OptionsMissing,
         MinecraftLaunched,

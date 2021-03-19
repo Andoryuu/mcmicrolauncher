@@ -68,6 +68,23 @@ namespace MCMicroLauncher.ApplicationState
             await this.PersistData();
         }
 
+        internal async Task<bool> GetAssetsPreparedAsync()
+        {
+            await this.EnsureData();
+
+            return this.data.AssetsPrepared;
+        }
+
+        internal async Task SetAssetsPreparedAsync(
+            bool assetsPrepared)
+        {
+            await this.EnsureData();
+
+            this.data.AssetsPrepared = assetsPrepared;
+
+            await this.PersistData();
+        }
+
         internal Task<ConfigModel> GetConfigAsync()
         {
             if (this.config != null)
@@ -153,6 +170,7 @@ namespace MCMicroLauncher.ApplicationState
             public string AccountName { get; set; }
             public string LoginName { get; set; }
             public bool BorderlessFullscreen { get; set; }
+            public bool AssetsPrepared { get; set; }
         }
 
         internal class ConfigModel

@@ -1,6 +1,7 @@
 ﻿using System.Windows.Forms;
 using MCMicroLauncher.ApplicationState;
 using MCMicroLauncher.Authentication;
+using MCMicroLauncher.Utils;
 
 namespace MCMicroLauncher
 {
@@ -14,6 +15,8 @@ namespace MCMicroLauncher
 
         private readonly JavaCaller JavaCaller;
 
+        private readonly AssetsLoader AssetsLoader;
+
         public MainWindow()
         {
             this.DataStore = new DataStore();
@@ -22,14 +25,16 @@ namespace MCMicroLauncher
             {
                 { (State.Closed, Trigger.Start), State.Validation },
 
-                { (State.Validation, Trigger.ValidationSuccess), State.OptionsCheck },
+                { (State.Validation, Trigger.ValidationSuccess), State.LoadingAssets },
                 { (State.Validation, Trigger.ValidationFailed), State.Refresh },
 
-                { (State.Refresh, Trigger.RefreshSuccess), State.OptionsCheck },
+                { (State.Refresh, Trigger.RefreshSuccess), State.LoadingAssets },
                 { (State.Refresh, Trigger.RefreshFailed), State.Login },
 
-                { (State.Login, Trigger.LoginSuccess), State.OptionsCheck },
+                { (State.Login, Trigger.LoginSuccess), State.LoadingAssets },
                 { (State.Login, Trigger.LoginFailed), State.Login },
+
+                { (State.LoadingAssets, Trigger.AssetsLoaded), State.OptionsCheck },
 
                 { (State.OptionsCheck, Trigger.OptionsResolved), State.Launcher },
                 { (State.OptionsCheck, Trigger.OptionsMissing), State.OptionsCheck },
@@ -41,6 +46,7 @@ namespace MCMicroLauncher
 
             this.AuthClient = new AuthClient(this.DataStore);
             this.JavaCaller = new JavaCaller(this.StateMachine, this.DataStore);
+            this.AssetsLoader = new AssetsLoader(this.DataStore);
 
             InitializeComponent();
 

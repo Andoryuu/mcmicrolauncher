@@ -39,34 +39,38 @@ namespace MCMicroLauncher.ApplicationState
         private async Task RunWorkerLoopAsync(
             ChannelReader<TTriggers> reader)
         {
-            while (await reader.WaitToReadAsync())
+            await foreach (var trigger in reader.ReadAllAsync())
             {
-                while (reader.TryRead(out var trigger))
+                try
                 {
-                    try
-                    {
-                        await HandleTrigger(trigger);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(
-                            $"Handler crashed, skipping trigger ({this.internalState}->{trigger})",
-                            ex);
-                    }
+                    await HandleTrigger(trigger);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(
+                        $"Handler crashed, skipping trigger ({this.internalState}->{trigger})",
+                        ex);
                 }
             }
         }
 
         private async Task HandleTrigger(TTriggers trigger)
         {
+            Log.Info("Processing trigger", $"{this.internalState} => {trigger}");
+
             if (!this.transitions
                 .TryGetValue((this.internalState, trigger), out var newState))
             {
+                Log.Warn("Transition not found", $"{this.internalState} => {trigger}");
                 return;
             }
 
+            Log.Info("Processing state change", $"{this.internalState} => {trigger} => {newState}");
+
             if (this.onLeave.TryGetValue(this.internalState, out var leaveActions))
             {
+                Log.Info("Processing leave handlers", this.internalState.ToString());
+
                 foreach (var action in leaveActions)
                 {
                     await action();
@@ -77,11 +81,15 @@ namespace MCMicroLauncher.ApplicationState
 
             if (this.onEntry.TryGetValue(newState, out var entryActions))
             {
+                Log.Info("Processing entry handlers", this.internalState.ToString());
+
                 foreach (var action in entryActions)
                 {
                     await action();
                 }
             }
+
+            Log.Info("State change done", this.internalState.ToString());
         }
 
         internal void OnEntry(TStates state, Func<Task> action)

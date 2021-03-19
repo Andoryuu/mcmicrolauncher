@@ -55,10 +55,12 @@ namespace MCMicroLauncher
                 this.AuthClient,
                 this.DataStore,
                 this.JavaCaller,
+                this.AssetsLoader,
                 fullSize);
 
             this.Controls.Add(cmpt.InitializeLoginCheck());
             this.Controls.Add(cmpt.InitializeLogin());
+            this.Controls.Add(cmpt.InitializeAssetsLoading());
             this.Controls.Add(cmpt.InitializeOptionsCheck());
             this.Controls.Add(cmpt.InitializeLauncher());
 
