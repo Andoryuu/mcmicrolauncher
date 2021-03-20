@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using MCMicroLauncher.ApplicationState;
 
@@ -25,7 +26,7 @@ namespace MCMicroLauncher.Utils
             this.dataStore = dataStore;
         }
 
-        public async Task<bool> PrepareAssetsAsync()
+        public async Task<(int count, IAsyncEnumerable<bool> progress)> PrepareAssetsAsync()
         {
             var config = await this.dataStore.GetConfigAsync();
 
@@ -33,7 +34,7 @@ namespace MCMicroLauncher.Utils
                 || !FileSystemUtils.TryGetLocalPath(config.AssetsFolder, out var assetsDir))
             {
                 Log.Error("Missing assets file");
-                return false;
+                return (-1, null);
             }
 
             var assetsIndexPath = Path.Combine(assetsDir, "indexes");
@@ -44,7 +45,7 @@ namespace MCMicroLauncher.Utils
             if (assetsIndex == null)
             {
                 Log.Error("Asset index was not found", assetsIndexPath);
-                return false;
+                return (-1, null);
             }
 
             using var indexFile = File.OpenRead(assetsIndex);
@@ -54,8 +55,9 @@ namespace MCMicroLauncher.Utils
                 .GetProperty("objects")
                 .EnumerateObject();
 
-            var paralelization = Environment.ProcessorCount;
+            var paralelization = Math.Min(1, Environment.ProcessorCount - 1);
             var i = 0;
+            var count = 0;
             var hashes = new List<string>[paralelization];
             foreach (var fileElement in objectsElements)
             {
@@ -63,53 +65,71 @@ namespace MCMicroLauncher.Utils
                     .Add(fileElement.Value.GetProperty("hash").ToString());
 
                 i = (i + 1) % paralelization;
+                count++;
             }
+
+            var channel = Channel.CreateUnbounded<bool>();
+            var reader = channel.Reader;
 
             var tokenSource = new CancellationTokenSource();
             var assetsObjectsDir = Path.Combine(assetsDir, "objects");
-            var results = await Task.WhenAny(
-                hashes.Select(l => Worker(l, assetsObjectsDir, tokenSource.Token)));
+            var tasks = hashes
+                .Select(l => Worker(l, assetsObjectsDir, channel.Writer, tokenSource))
+                .ToList();
 
-            if (!results.Result)
+            _ = Monitor(tasks, channel.Writer);
+
+            return (count, reader.ReadAllAsync());
+
+            static async Task Monitor(
+                List<Task> tasks,
+                ChannelWriter<bool> channelWriter)
             {
-                tokenSource.Cancel();
-                return false;
+                await Task.WhenAll(tasks);
+                channelWriter.TryComplete();
             }
 
-            await this.dataStore.SetAssetsPreparedAsync(true);
-            return true;
-
-            static async Task<bool> Worker(
+            static async Task Worker(
                 List<string> hashes,
                 string assetsObjectsDir,
-                CancellationToken token)
+                ChannelWriter<bool> channelWriter,
+                CancellationTokenSource tokenSource)
             {
                 foreach (var hash in hashes)
                 {
-                    if (token.IsCancellationRequested)
+                    if (tokenSource.IsCancellationRequested)
                     {
-                        return false;
+                        return;
                     }
 
-                    using var res = await client.GetAsync(
-                        AssetsUrl + hash[0..2] + "/" + hash,
-                        token);
+                    using var res = await client
+                        .GetAsync(AssetsUrl + hash[0..2] + "/" + hash);
 
                     if (!res.IsSuccessStatusCode)
                     {
-                        var errorContent = await res.Content.ReadAsStringAsync(token);
+                        var errorContent = await res.Content.ReadAsStringAsync();
                         Log.Error("Asset download failed", hash, errorContent);
-                        return false;
+
+                        tokenSource.Cancel();
+                        channelWriter.TryWrite(false);
+                        channelWriter.TryComplete();
+
+                        return;
                     }
 
-                    var content = await res.Content.ReadAsByteArrayAsync(token);
+                    if (tokenSource.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                    var content = await res.Content.ReadAsByteArrayAsync();
                     var hashPath = Path.Combine(assetsObjectsDir, hash[0..2]);
                     Directory.CreateDirectory(hashPath);
                     var hashFile = Path.Combine(hashPath, hash);
                     File.WriteAllBytes(hashFile, content);
-                }
 
-                return true;
+                    channelWriter.TryWrite(true);
+                }
             }
         }
     }

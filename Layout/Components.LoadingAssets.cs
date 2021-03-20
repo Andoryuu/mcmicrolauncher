@@ -10,12 +10,21 @@ namespace MCMicroLauncher.Layout
         {
             var descriptionLabel = new Label
             {
-                Text = "Loading assets, please wait...",
+                Text = "Downloading assets, please wait...",
                 ForeColor = Color.White,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Location = new Point(10, 70),
+                Location = new Point(10, 60),
                 Width = this.FullSize.Width - 20,
-                Height = 50
+                Height = 30
+            };
+
+            var countLabel = new Label
+            {
+                ForeColor = Color.White,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Location = new Point(10, 90),
+                Width = this.FullSize.Width - 20,
+                Height = 30
             };
 
             var container = new ContainerControl
@@ -26,21 +35,43 @@ namespace MCMicroLauncher.Layout
 
             container.Controls.AddRange(new Control[]
             {
-                descriptionLabel
+                descriptionLabel,
+                countLabel
             });
 
             this.StateMachine.OnEntry(State.LoadingAssets, async () =>
             {
-                if (!await this.DataStore.GetAssetsPreparedAsync())
+                if (await this.DataStore.GetAssetsPreparedAsync())
                 {
-                    container.UI(() => container.Visible = true);
+                    this.StateMachine.Call(Trigger.AssetsLoaded);
+                    return;
+                }
 
-                    if (!await this.AssetsLoader.PrepareAssetsAsync())
+                container.UI(() => container.Visible = true);
+
+                var (count, progress)
+                    = await this.AssetsLoader.PrepareAssetsAsync();
+
+                if (count < 0)
+                {
+                    Application.Exit();
+                }
+
+                var progCount = 0;
+                await foreach (var item in progress)
+                {
+                    if (!item)
                     {
                         Application.Exit();
                     }
+
+                    progCount++;
+
+                    container.UI(() =>
+                        countLabel.Text = $"{progCount} / {count}");
                 }
 
+                await this.DataStore.SetAssetsPreparedAsync(true);
                 this.StateMachine.Call(Trigger.AssetsLoaded);
             });
 
